@@ -50,7 +50,7 @@ import { useAppSelector } from './store/hooks';
 // [#1123] Commented out — welcome-agent onboarding replaced by Joyride walkthrough
 // import { clearSelectedThread, deleteThread, setWelcomeThreadId } from './store/threadSlice';
 import { isAccountsFullscreen } from './utils/accountsFullscreen';
-import { DEV_FORCE_ONBOARDING } from './utils/config';
+import { DEV_FORCE_ONBOARDING, DEV_NO_AUTH_MODE } from './utils/config';
 
 // Attach the `webview:event` listener at app boot so background recipe
 // events (Google Meet captions → transcript flush, WhatsApp ingest, …)
@@ -132,6 +132,9 @@ function AppShell() {
   // onboarding route back to `/onboarding`. Once completed, bounce the
   // user off `/onboarding` so they don't get stuck on the stepper.
   useEffect(() => {
+    // No-auth mode: skip onboarding gates entirely
+    if (DEV_NO_AUTH_MODE) return;
+    
     if (isBootstrapping || !snapshot.sessionToken) return;
     if (onboardingPending && !onOnboardingRoute) {
       console.debug(

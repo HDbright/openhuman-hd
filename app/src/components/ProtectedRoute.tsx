@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 
 import { useCoreState } from '../providers/CoreStateProvider';
+import { DEV_NO_AUTH_MODE } from '../utils/config';
 import RouteLoadingScreen from './RouteLoadingScreen';
 
 interface ProtectedRouteProps {
@@ -17,6 +18,14 @@ interface ProtectedRouteProps {
  */
 const ProtectedRoute = ({ children, requireAuth = true, redirectTo }: ProtectedRouteProps) => {
   const { isBootstrapping, snapshot } = useCoreState();
+
+  // No-auth mode: skip all authentication checks
+  if (DEV_NO_AUTH_MODE) {
+    if (isBootstrapping) {
+      return <RouteLoadingScreen />;
+    }
+    return <>{children}</>;
+  }
 
   if (isBootstrapping) {
     return <RouteLoadingScreen />;

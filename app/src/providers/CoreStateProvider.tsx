@@ -18,6 +18,7 @@ import {
   setCoreStateSnapshot,
 } from '../lib/coreState/store';
 import { syncAnalyticsConsent } from '../services/analytics';
+import { DEV_NO_AUTH_MODE } from '../utils/config';
 import {
   fetchCoreAppSnapshot,
   getTeamInvites,
@@ -221,11 +222,45 @@ function toSignedOutSnapshot(snapshot: CoreAppSnapshot): CoreAppSnapshot {
   };
 }
 
+function toMockAuthenticatedSnapshot(snapshot: CoreAppSnapshot): CoreAppSnapshot {
+  const mockUserId = 'dev-user-id-12345';
+  const mockSessionToken = 'dev-session-token-abc123';
+  return {
+    ...snapshot,
+    auth: {
+      isAuthenticated: true,
+      userId: mockUserId,
+      user: { id: mockUserId, email: 'dev@example.com' },
+      profileId: null,
+    },
+    sessionToken: mockSessionToken,
+    currentUser: {
+      id: mockUserId,
+      email: 'dev@example.com',
+      name: 'Local Dev User',
+    } as any,
+    onboardingCompleted: true,
+    chatOnboardingCompleted: true,
+    analyticsEnabled: false,
+  };
+}
+
 export default function CoreStateProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CoreState>(() => getCoreStateSnapshot());
+  const [state, setState] = useState<CoreState>(() => {
+    const initialState = getCoreStateSnapshot();
+    if (DEV_NO_AUTH_MODE) {
+      return {
+        ...initialState,
+        snapshot: toMockAuthenticatedSnapshot(initialState.snapshot),
+      };
+    }
+    return initialState;
+  });
   const snapshotRequestIdRef = useRef(0);
   const teamsRequestIdRef = useRef(0);
-  const memoryTokenRef = useRef<string | null>(state.snapshot.sessionToken);
+  const memoryTokenRef = useRef<string | null>(
+    DEV_NO_AUTH_MODE ? 'dev-session-token-abc123' : state.snapshot.sessionToken
+  );
   const logoutGuardUntilRef = useRef(0);
   const bootstrapFailCountRef = useRef(0);
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
@@ -253,7 +288,26 @@ export default function CoreStateProvider({ children }: { children: ReactNode })
 
   const refreshCore = useCallback(async () => {
     const requestId = ++snapshotRequestIdRef.current;
-    const snapshot = normalizeSnapshot(await fetchCoreAppSnapshot());
+    let snapshot: CoreAppSnapshot;
+    
+    // No-auth mode: use mock authenticated snapshot
+    if (DEV_NO_AUTH_MODE) {
+      const baseSnapshot = normalizeSnapshot(await fetchCoreAppSnapshot().catch(() => ({
+        auth: { isAuthenticated: false, userId: null, user: null, profileId: null },
+        sessionToken: null,
+        currentUser: null,
+        onboardingCompleted: false,
+        chatOnboardingCompleted: false,
+        analyticsEnabled: false,
+        meetAutoOrchestratorHandoff: false,
+        localState: { encryptionKey: null, onboardingTasks: null },
+        runtime: { screenIntelligence: null, localAi: null, autocomplete: null, service: null },
+      })));
+      snapshot = toMockAuthenticatedSnapshot(baseSnapshot);
+    } else {
+      snapshot = normalizeSnapshot(await fetchCoreAppSnapshot());
+    }
+    
     if (!isMountedRef.current) {
       return;
     }

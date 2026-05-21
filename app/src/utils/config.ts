@@ -123,6 +123,11 @@ export const DEV_JWT_TOKEN = import.meta.env.DEV
   ? (import.meta.env.VITE_DEV_JWT_TOKEN as string | undefined)
   : undefined;
 
+/** Dev only: disable authentication entirely for local development. */
+export const DEV_NO_AUTH_MODE = import.meta.env.DEV
+  ? import.meta.env.VITE_DEV_NO_AUTH_MODE === 'true'
+  : false;
+
 export const APP_VERSION = packageJson.version;
 
 /**
