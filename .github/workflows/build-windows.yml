@@ -3,7 +3,9 @@ name: Build Windows
 on:
   workflow_dispatch:
   push:
-    branches: [fix/windows]
+    branches: [main, dev, fix/windows]
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
 concurrency:
@@ -66,8 +68,12 @@ jobs:
         if: steps.tauri-cli-cache.outputs.cache-hit != 'true'
         shell: bash
         run: cargo install --locked --path app/src-tauri/vendor/tauri-cef/crates/tauri-cli
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          cache: true
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # vite build runs via tauri.conf.json's beforeBuildCommand during the
       # "Build Tauri app" step below — no separate frontend build needed.
