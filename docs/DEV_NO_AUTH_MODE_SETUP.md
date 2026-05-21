@@ -211,6 +211,32 @@ VITE_DEV_NO_AUTH_MODE=false
 
 ---
 
+### 7. `app/src/components/BootCheckGate/BootCheckGate.tsx`
+
+**修改内容：**
+
+1. 导入配置：
+```typescript
+import { DEV_NO_AUTH_MODE } from '../../utils/config';
+```
+
+2. 在组件开头添加无认证模式处理：
+```typescript
+export default function BootCheckGate({ children }: BootCheckGateProps) {
+  const { t } = useT();
+  const dispatch = useAppDispatch();
+  const coreMode = useAppSelector(state => state.coreMode.mode);
+
+  // Dev mode: skip boot check entirely
+  if (DEV_NO_AUTH_MODE) {
+    return <>{children}</>;
+  }
+  // ... 其余代码保持不变
+}
+```
+
+---
+
 ## 使用步骤
 
 ### 拉取上游更新后应用此功能
@@ -227,6 +253,7 @@ VITE_DEV_NO_AUTH_MODE=false
    - `app/src/providers/CoreStateProvider.tsx`
    - `app/src/App.tsx`
    - `app/.env.example`
+   - `app/src/components/BootCheckGate/BootCheckGate.tsx`
 
 3. **按照上述修改内容逐一应用变更**
 

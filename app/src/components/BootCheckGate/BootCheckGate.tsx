@@ -12,6 +12,8 @@
 import debug from 'debug';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { DEV_NO_AUTH_MODE } from '../../utils/config';
+
 import { type BootCheckResult, runBootCheck } from '../../lib/bootCheck';
 import { useT } from '../../lib/i18n/I18nContext';
 import { bootCheckTransport } from '../../services/bootCheckService';
@@ -570,6 +572,11 @@ export default function BootCheckGate({ children }: BootCheckGateProps) {
   const { t } = useT();
   const dispatch = useAppDispatch();
   const coreMode = useAppSelector(state => state.coreMode.mode);
+
+  // Dev mode: skip boot check entirely
+  if (DEV_NO_AUTH_MODE) {
+    return <>{children}</>;
+  }
 
   const [phase, setPhase] = useState<Phase>(() =>
     coreMode.kind === 'unset' ? 'picker' : 'checking'
